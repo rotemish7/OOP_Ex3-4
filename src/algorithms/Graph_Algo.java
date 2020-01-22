@@ -89,6 +89,58 @@ public class Graph_Algo implements graph_algorithms,Serializable
 		} 
 
 	}
+	
+	/**
+	 * The function check if there is a path between the vertices
+	 * @param src - start node
+	 * @param dest - end (target) node
+	 * @return true if there is a path from vertex src to  vertex dest, else false
+	 */
+	private boolean isPath(int src,int dest)
+	{
+		boolean path=false;
+		
+		g.getNode(src).setTag(1);//change the color of vertex key to gray
+		try 
+		{
+			for(Iterator<edge_data> edgeIter=g.getE(src).iterator();edgeIter.hasNext();)
+			{
+				int verPath =edgeIter.next().getDest();
+				if(g.getNode(verPath).getTag()==0)//check if the color is white
+				{
+					if(verPath==dest)//if verPath is the vertex that we search
+					{
+						return true;
+					}
+					else
+					{
+						if(!path&&isPath(verPath,dest))//check if from this vertex there is a edge to dest
+						{
+							path=true;
+						}
+					}
+				}
+			}
+			this.resetTag();
+			return path;
+		}
+		catch(NullPointerException e)//if there isn't a path
+		{
+			this.resetTag();
+			return false;
+		}
+	}
+	
+	/**
+	 * change the color of all the vertices to white (0)
+	 */
+	private void resetTag()
+	{
+		for(Iterator<node_data> verIter=g.getV().iterator();verIter.hasNext();)
+		{
+			verIter.next().setTag(0);
+		}
+	}
 
 	@Override
 	public boolean isConnected()
@@ -199,10 +251,10 @@ public class Graph_Algo implements graph_algorithms,Serializable
 			}
 		}
 
-		if(!isWay(src,dest)) // if there is no way 
-		{
-			return Double.POSITIVE_INFINITY;
-		}
+//		if(!isPath(src,dest)) // if there is no way 
+//		{
+//			return Double.POSITIVE_INFINITY;
+//		}
 		
 		Collection<node_data> nodes = new ArrayList<node_data>();
 		for (node_data node : g.getV()) 

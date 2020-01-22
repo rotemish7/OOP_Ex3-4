@@ -3,7 +3,9 @@ package gameClient;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -18,6 +20,7 @@ import dataStructure.DGraph;
 import dataStructure.edge_data;
 import dataStructure.graph;
 import dataStructure.node_data;
+import sun.font.CreatedFontTracker;
 /**
  * This class represents a simple example for using the GameServer API:
  * the main file performs the following tasks:
@@ -44,8 +47,12 @@ public class SimpleGameClient
 	private static game_service game;
 	private static int scenario_num;
 	private static DGraph DG = new DGraph();
+	private static Graph_Algo GA = new Graph_Algo();
 	private static GameServer server = new GameServer();
 	private static KML_Logger KML;
+	private static List<String> realFruits = new ArrayList<String>();
+	private static List<Robot> matchRobotEnd = new ArrayList<Robot>();
+	private static List<Fruit> matchFruitEnd = new ArrayList<Fruit>();
 
 
 	public static void main(String[] a) 
@@ -56,7 +63,7 @@ public class SimpleGameClient
 		DG.init(g_string);
 		KML = new KML_Logger(scenario_num);
 		KML.info_kml(DG.graph_to_kml());
-		
+
 		AutoSetRobot(server,DG);
 
 		if(typegame.equals("auto"))
@@ -77,7 +84,7 @@ public class SimpleGameClient
 
 	public static void test1() 
 	{
-		
+
 		String g = game.getGraph();
 		//GameServer game2 = new GameServer(game.getFruits(),game.);
 
@@ -112,7 +119,7 @@ public class SimpleGameClient
 		game.startGame();
 
 		window.setVisible(true);
-
+		realFruits.containsAll(game.getFruits());
 		while(game.isRunning()) 
 		{
 			moveRobots(game, gg);
@@ -131,7 +138,7 @@ public class SimpleGameClient
 		//choose scenario
 		typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
 		scenario_num = 0; 
-		
+
 		if(typegame.equals("manual") || typegame.equals("auto"))
 		{
 			String level = JOptionPane.showInputDialog(frame,"Enter level 0 - 23");
@@ -147,7 +154,7 @@ public class SimpleGameClient
 		DG.init(g_string);
 		String info = game.toString();
 		JSONObject line;
-		
+
 		try
 		{
 			line = new JSONObject(info);
@@ -169,7 +176,8 @@ public class SimpleGameClient
 		int dt = 100;
 		while( game.isRunning()) 
 		{
-			moveRobots2(game, DG);
+			//			moveRobots2(game, DG);
+			moveRobots3(game, DG);
 			//moveRobots(game,DG);
 			window.repaint();
 
@@ -181,10 +189,10 @@ public class SimpleGameClient
 				e.printStackTrace();
 			}
 		}
-		
+
 		String results = game.toString();
 		System.out.println("Game Over: "+results);
-		
+
 	}
 
 	public static void manualPlay()
@@ -219,7 +227,7 @@ public class SimpleGameClient
 
 	public static edge_data onEdge(Fruit f,graph g)
 	{
-		double EPSILON = 0.00005;
+		double EPSILON = 0.00001;
 		for (node_data node : g.getV()) 
 		{
 			for (edge_data edge : g.getE(node.getKey())) 
@@ -230,13 +238,21 @@ public class SimpleGameClient
 
 				if((srcTof + dstTof - edgeLen) <= EPSILON)
 				{
-					return edge;
+					if(edge.getSrc()<edge.getDest())
+					{
+						return edge;
+					}
+					else
+					{
+						return g.getEdge(edge.getDest(), edge.getSrc());
+
+					}
 				}
 			}
 		}
 		return null;
 	}
-	
+
 	/** 
 	 * Moves each of the robots along the edge, 
 	 * in case the robot is on a node the next destination (next edge) is chosen (randomly).
@@ -244,71 +260,174 @@ public class SimpleGameClient
 	 * @param gg
 	 * @param log
 	 */
+
+	private static void moveRobots3(game_service game, graph gg)
+	{
+		GA.init(gg);
+		List<String> log = game.move();
+		List<String> Sfruit = game.getFruits();
+		List<Fruit> fruit = creatFruits(Sfruit);
+		double minPath = Double.POSITIVE_INFINITY;
+		int next=0;
+		int bestDest=0;
+		edge_data fruitEd = null;
+		if(log!=null) {
+			for(int i=0;i<log.size();i++)
+			{
+				fruit = creatFruits(Sfruit);
+				Fruit f = null;
+				String robot_json = log.get(i);
+				try {
+					JSONObject line = new JSONObject(robot_json);
+					JSONObject ttt = line.getJSONObject("Robot");
+					int rid = ttt.getInt("id");
+					int src = ttt.getInt("src");
+					int dest = ttt.getInt("dest");
+
+					if(dest==-1)
+					{	
+						for(int j=0; j<fruit.size(); j++)
+						{
+							edge_data ed = onEdge(fruit.get(j), gg);
+							if (fruit.get(0).getType() ==1) 
+							{
+								next = ed.getDest();
+							}
+							else
+							{
+								next = ed.getSrc();
+							}
+							double path = GA.shortestPathDist(src, next);
+							if(path<minPath)
+							{
+								minPath = path;
+								bestDest = next;
+								fruitEd = ed;
+								f = fruit.get(j);
+							}
+						}
+
+						dest = nextNode3(gg, src, bestDest, fruitEd, f);
+						game.chooseNextEdge(rid, dest);
+						System.out.println("bestDest: " + bestDest);
+						System.out.println("Turn to node: "+dest);
+						System.out.println(ttt);
+					}
+				} 
+				catch (JSONException e) {e.printStackTrace();}
+			}
+		}
+	}
+
 	private static void moveRobots2(game_service game, graph gg)
 	{
+		game.move();
+		GA.init(gg);
+		//		List<String> log = game.move();
+		//		if(log!=null) 
+		//		{
+		//			for(int i=0;i<log.size();i++)
+		//			{
+		//				String robot_json = log.get(i);
+		//				try 
+		//				{
+		//					JSONObject line = new JSONObject(robot_json);
+		//					JSONObject ttt = line.getJSONObject("Robot");
+		//					int rid = ttt.getInt("id");
+		//					int src = ttt.getInt("src");
+		//					int dest = ttt.getInt("dest");
+		//				}
+		//				catch(Exception e)
+		//				{
+		//					;
+		//				}
+		//			}
+		//		}
 		List<String> robots = game.getRobots();
-		List<String> fruits = game.getFruits();
 		List<Robot> robot = new ArrayList<Robot>();
-		List<Robot> matchRobot = new ArrayList<Robot>();;
-		List<Fruit> matchFruit = new ArrayList<Fruit>();;
-		List<Robot> matchRobotEnd = new ArrayList<Robot>();;
-		List<Fruit> matchFruitEnd = new ArrayList<Fruit>();;
-		double sumPath = 0;
-		double MinPath = 0;
-		double sumValue = 0;
-		int endPer=0; // check if we done 5 permutations
-		while(endPer<5)
+		if(!realFruits.containsAll(game.getFruits()))
 		{
-			List<Fruit> f = creatFruits(fruits);
-			for (String r : robots) 
+			realFruits.clear();
+			realFruits.addAll(game.getFruits());
+			List<Robot> matchRobot = new ArrayList<Robot>();
+			List<Fruit> matchFruit = new ArrayList<Fruit>();
+			int endPer=0; // check if we done 25 permutations
+			double MinPath = Double.POSITIVE_INFINITY;
+			while(endPer<25)
 			{
-				Robot ro = new Robot(r);
-				robot.add(ro);
-			}
-			double maxValue = 0;
-			double minPath = Double.POSITIVE_INFINITY;
-			Robot moveRobot = null;
-			edge_data ed = null;
-			while(!f.isEmpty() && !robot.isEmpty())
-			{
-				int rand = (int)(Math.random()*f.size());
-				Fruit randFruit = f.get(rand);
-				ed = onEdge(randFruit, gg);
-				for(int i=0; i<robot.size(); i++)
+				matchFruit.clear();
+				matchRobot.clear();
+				double sumValue = 0;
+				double sumPath = 0;
+				List<Fruit> f = creatFruits(realFruits);
+				for (String r : robots) 
 				{
-					if(robot.get(i).getDest() != -1)
+					Robot ro = new Robot(r);
+					robot.add(ro);
+				}
+				double maxValue = 0;
+				double minPath = Double.POSITIVE_INFINITY;
+				Robot moveRobot = new Robot();
+				edge_data ed = null;
+				while(!f.isEmpty() && !robot.isEmpty())
+				{
+
+					int rand = (int)(Math.random()*f.size());
+					Fruit randFruit = f.get(rand);
+					ed = onEdge(randFruit, gg);
+					for(int i=0; i<robot.size(); i++)
 					{
-						double path = Graph_Algo.shortestPathDist(ed.getSrc(), robot.get(i).getSrc(),gg);
-						if(maxValue < randFruit.getValue() && path < minPath)
+						if(robot.get(i).getDest() == -1)
 						{
-							maxValue = randFruit.getValue();
-							minPath = path;
-							sumPath+=path;
-							sumValue+=maxValue;
-							moveRobot = robot.get(i);
+							double path = GA.shortestPathDist(ed.getSrc(), robot.get(i).getSrc());
+							if(maxValue < randFruit.getValue() && path < minPath)
+							{
+								maxValue = randFruit.getValue();
+								minPath = path;
+								moveRobot = robot.get(i);
+							}
 						}
 					}
+					sumPath+=minPath;
+					sumValue+=maxValue;
+					matchFruit.add(randFruit);
+					matchRobot.add(moveRobot);
+					f.remove(rand);
+					robot.remove(moveRobot);
 				}
-				matchFruit.add(randFruit);
-				matchRobot.add(moveRobot);
-				f.remove(rand);
-				robot.remove(moveRobot);
+
+				if(sumValue/sumPath < MinPath)
+				{
+					MinPath = sumValue/sumPath;
+					matchRobotEnd.clear();
+					matchRobotEnd.addAll(matchRobot);
+					matchFruitEnd.clear();
+					matchFruitEnd.addAll(matchFruit);
+					matchRobot.clear();
+					matchFruit.clear();
+				}
+				endPer++;
 			}
-			if(sumPath < MinPath)
-			{
-				MinPath = sumPath;
-				matchRobotEnd = matchRobot;
-				matchFruitEnd = matchFruit;
-				matchRobot.clear();
-				matchFruit.clear();
-			}
-			endPer++;
 		}
+		System.out.println(matchRobotEnd.size());
 		for(int i=0; i<matchRobotEnd.size(); i++)
 		{
-			edge_data dest = onEdge(matchFruitEnd.get(i), gg);
-			int next = nextNode2(gg, matchRobotEnd.get(i), dest.getDest());
-			game.chooseNextEdge(matchRobotEnd.get(i).getId(), next);
+			System.out.println("iteration= " +i);
+			if(matchRobotEnd.get(i).getDest() == -1)
+			{
+				System.out.println("iterationIf= " +i);
+				edge_data dest = onEdge(matchFruitEnd.get(i), gg);
+				//				int next = nextNode2(gg, matchRobotEnd.get(i), dest.getDest());
+				System.out.println("edge" + dest.getSrc());
+				System.out.println("src" + matchRobotEnd.get(i).getSrc());
+				System.out.println("dst" + matchRobotEnd.get(i).getDest());
+
+				//int next = nextNode3(gg, matchRobotEnd.get(i).getSrc(), dest.getSrc());
+				System.out.println("next " +next);
+				game.chooseNextEdge(matchRobotEnd.get(i).getId(), next);
+				System.out.println("src: " + matchRobotEnd.get(i).getSrc());
+				System.out.println("dest: " + matchRobotEnd.get(i).getDest());
+			}
 		}
 	}
 
@@ -320,7 +439,7 @@ public class SimpleGameClient
 	private static List<Fruit> creatFruits(List<String> fruits)
 	{
 		List<Fruit> temp = new ArrayList<Fruit>(); 
-		
+
 		for (String f : fruits) 
 		{
 			temp.add(new Fruit(f));
@@ -337,12 +456,89 @@ public class SimpleGameClient
 	 */
 	private static int nextNode2(graph g, Robot r, int dest) 
 	{
-		List<node_data> path = Graph_Algo.shortestPath(r.getSrc(), dest,g);
-		r.setDest(path.get(1).getKey());
-		return path.get(1).getKey();
+		GA.init(g);
+		List<node_data> path = GA.shortestPath(r.getSrc(), dest);
+		Queue<node_data> pathQ = new LinkedList<node_data>();
+		boolean first = true;
+		pathQ.addAll(path);
+		System.out.println("robot " + r.getId());
+		System.out.println("path " + path.size());
+		if(path.size() == 1)
+		{
+			for (node_data node_data : DG.getV()) 
+			{
+				for (edge_data edge : DG.getE(node_data.getKey()))
+				{
+					if(edge.getDest() == path.get(0).getKey())
+					{
+						//						r.setDest(edge.getSrc());
+						return edge.getSrc();
+					}
+					else if (edge.getSrc() == path.get(0).getKey())
+					{
+						//						r.setDest(edge.getDest());
+						return edge.getDest();
+					}
+				}
+			}
+		}
+		else
+		{
+			if(first)
+			{
+				pathQ.poll();
+				first = false;
+			}
+			node_data next = pathQ.poll();
+			//			r.setDest(path.get(1).getKey());
+			//			return path.get(1).getKey();
+			//			r.setDest(next.getKey());
+			return next.getKey();
+		}
+		return -1;
 	}
-	
-	
+
+
+	private static int nextNode3(graph g, int src, int dest, edge_data fruitEd, Fruit f) 
+	{
+		GA.init(g);
+		List<node_data> path = GA.shortestPath(src, dest);
+		Queue<node_data> pathQ = new LinkedList<node_data>();
+		pathQ.addAll(path);
+
+		if(pathQ.size() == 1)
+		{
+			edge_data ed = g.getEdge(fruitEd.getDest(), fruitEd.getSrc());
+			if(src == fruitEd.getDest())
+			{
+				return fruitEd.getSrc();
+			}
+			else if (src == fruitEd.getSrc())
+			{
+				return fruitEd.getDest();
+			}
+		}
+		boolean first = true;
+		int next = 0;
+		if (first)
+		{	
+			pathQ.poll();
+			first = false;
+		}			
+		next = pathQ.poll().getKey();
+		return next;
+
+		//		int ans = -1;
+		//		Collection<edge_data> ee = g.getE(src);
+		//		Iterator<edge_data> itr = ee.iterator();
+		//		int s = ee.size();
+		//		int r = (int)(Math.random()*s);
+		//		int i=0;
+		//		while(i<r) {itr.next();i++;}
+		//		ans = itr.next().getDest();
+		//		return ans;
+	}
+
 	/** 
 	 * Moves each of the robots along the edge, 
 	 * in case the robot is on a node the next destination (next edge) is chosen (randomly).
@@ -377,7 +573,7 @@ public class SimpleGameClient
 			}
 		}
 	}
-	
+
 	/**
 	 * a very simple random walk implementation!
 	 * @param g

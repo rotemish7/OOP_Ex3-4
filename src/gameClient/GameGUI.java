@@ -207,12 +207,6 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 		paintFruits();		
 		paintRobots();
 
-//		if(game.timeToEnd()/10<1) 
-//		{	
-//			ImageIcon GameOver = new ImageIcon("GameOver.png");
-//			Image  GameOver1  = GameOver.getImage();
-//			g.drawImage(GameOver1, 0, 0,defaultx-17, defaulty-40, this);
-//		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +238,6 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 		run();
 	}
 
-	////////////////////////////////////////////Graph Paint////////////////////////////////////////////////////////////////////////
 	private void paintgraph(Graphics g) 
 	{
 		super.paintComponents(g);
@@ -253,10 +246,12 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 		g.setColor(Color.blue);
 		
 		g4.setStroke(new BasicStroke(5));
+		
 		//sets the txt size 
 		float f=13.0f; // font size.
 		g4.setFont(g4.getFont().deriveFont(f));
 		
+		//go through all the nodes in the graph
 		for (node_data node_data : graph.getV()) 
 		{
 			Point3D nodes_src = node_data.getLocation();
@@ -264,8 +259,10 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 			double x = scale(nodes_src.x(),this.minX,this.maxX,80,this.getWidth()-80);
 			double y = scale(nodes_src.y(),this.minY,this.maxY,80,this.getHeight()-80);
 			g.fillOval((int)x-7, (int)y-7,15,15);
+			g.setColor(Color.PINK);
 			g.drawString(Integer.toString(node_data.getKey()),(int)x-3,(int)y-7);
 
+			//go through all the edges of the specific node
 			for (edge_data edge_data : graph.getE(node_data.getKey())) 
 			{
 				g.setColor(Color.RED);
@@ -289,7 +286,7 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 				//draw the edge weight in Black
 				double mid_of_edge_x= ((nodes_src.x()+nodes_dest.x())/2);
 				double mid_of_edge_y= ((nodes_src.y()+nodes_dest.y())/2);
-				g4.setColor(Color.BLACK);
+				g4.setColor(Color.PINK);
 				double scale_midX = scale(mid_of_edge_x,minX,maxX,80,this.getWidth()-80);
 				double scale_midY = scale(mid_of_edge_y,minY,maxY,80,this.getHeight()-80);
 				DecimalFormat df = new DecimalFormat("#.00");
@@ -297,24 +294,16 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 			}
 		}
 
-		ImageIcon Score = new ImageIcon("data\\Score.png");
-		Image  Score1  = Score.getImage();
-		g.drawImage(Score1, (int)(defaultx*0.0313), (int)(defaulty*0.075),(int)(defaulty*0.273),(int)(defaulty*0.273), this);
-
-
-		ImageIcon sd = new ImageIcon("data\\GameBoard.png");
-		Image  sd1  = sd.getImage();
-		g.drawImage(sd1, (int)(defaultx*0.85),(int)(defaulty*0.76),(int)(defaulty*0.233),(int)(defaulty*0.233), this);
-
 		Graphics2D G = (Graphics2D)g;
 		float f1=26.0f; // font size.
-		G.setColor(Color.WHITE);
+		G.setColor(Color.GREEN);
 		G.setFont(G.getFont().deriveFont(f1));
-		G.drawString("Time-Left    "+game.timeToEnd()/1000,(int)(defaultx*0.857),(int)(defaulty*0.842));
+		G.drawString("Time-Left    "+game.timeToEnd()/1000,(int)(defaultx*0.861),(int)(defaulty*0.91));
+		
+		f1 = 35.0f;
+		G.setFont(G.getFont().deriveFont(f1));
+		G.drawString("Level -- "+this.Level,(int)(defaultx*0.5),(int)(defaulty*0.15));
 
-		G.drawString("Level:       "+this.Level,(int)(defaultx*0.857),(int)(defaulty*0.865));
-
-		g4.setColor(Color.WHITE);
 		f1=35.0f; // font size.
 		g4.setFont(g4.getFont().deriveFont(f1));
 		g4.drawString("Score:", (int)(defaultx*0.03), (int)(defaulty*0.15));
