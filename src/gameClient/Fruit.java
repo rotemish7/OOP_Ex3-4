@@ -13,12 +13,16 @@ public class Fruit
 	private int value;
 	private int type;
 	private Point3D pos;
+	private int tag;
 
+	public Fruit() {}
+	
 	public Fruit(int value, int type, Point3D pos)
 	{
 		this.value=value;
 		this.type=type;
 		this.pos=pos;
+		this.tag = 0;
 	}
 
 	public Fruit(String s) 
@@ -46,6 +50,15 @@ public class Fruit
 
 
 		return ans;
+	}
+	public int getTag()
+	{
+		return this.tag;
+	}
+	
+	public void setTag(int tag)
+	{
+		this.tag = tag;
 	}
 
 	public int getValue()
