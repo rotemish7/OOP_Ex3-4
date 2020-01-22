@@ -187,7 +187,78 @@ public class SimpleGameClient
 
 	public static void manualPlay()
 	{
+		GameGUI window = new GameGUI(server);
+		window.setVisible(true);
+		game.startGame();
+		JFrame frame = null;
+		int node;
+		int idr;
+		int dt = 100;
+		while( game.isRunning()) 
+		{
+			String s_robot = JOptionPane.showInputDialog(frame,"Enter a robot id");
+			
+			String s_node = JOptionPane.showInputDialog(frame,"Enter a neighboor node destination");
+			try
+			{
+				node = Integer.parseInt(s_node);
+				idr = Integer.parseInt(s_robot);
+			}
+			catch(Exception e) {}
 
+			moveRobotsM(idr, node, DG);
+		
+			window.repaint();
+
+//			try 
+//			{
+//				//Thread.sleep(dt);
+//			} catch (InterruptedException e)
+//			{
+//				e.printStackTrace();
+//			}
+		}
+
+
+		//choose scenario
+		typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
+		scenario_num = 0; 
+
+		if(typegame.equals("manual") || typegame.equals("auto"))
+		{
+			String level = JOptionPane.showInputDialog(frame,"Enter level 0 - 23");
+
+			try
+			{
+				scenario_num = Integer.parseInt(level);
+			}catch(Exception e){}
+		}
+	}
+	
+	public static void moveRobotsM(int id, int node,graph g)
+	{
+		GA.init(g);
+		List<String> log = game.move();
+		if(log!=null)
+		{
+			for(int i=0;i<log.size();i++)
+			{
+				String robot_json = log.get(i);
+				try
+				{
+					JSONObject line = new JSONObject(robot_json);
+					JSONObject ttt = line.getJSONObject("Robot");
+					int rid = ttt.getInt("id");
+					int src = ttt.getInt("src");
+					int dest = ttt.getInt("dest");
+					if(rid == id)
+					{
+						game.chooseNextEdge(rid, node);
+					}
+				}
+				catch (JSONException e) {e.printStackTrace();}
+			}
+		}
 	}
 
 	public static void AutoSetRobot(GameServer server,graph g) 
