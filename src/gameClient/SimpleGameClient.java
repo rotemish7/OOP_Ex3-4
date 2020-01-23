@@ -1,5 +1,6 @@
 package gameClient;
 
+import java.awt.FileDialog;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -44,6 +45,8 @@ public class SimpleGameClient
 	//static GameGUI window;
 	private static String typegame;
 	private static String g_string;
+	private String Robots_kml="";
+	private String Fruits_kml="";
 	private static game_service game;
 	private static int scenario_num;
 	private static int ID;
@@ -51,7 +54,8 @@ public class SimpleGameClient
 	private static Graph_Algo GA = new Graph_Algo();
 	private static GameServer server = new GameServer();
 	private static KML_Logger KML;
-	
+	private static JFrame frame;
+	private static int id = 0;
 
 	public static void main(String[] a) 
 	{
@@ -110,7 +114,7 @@ public class SimpleGameClient
 		game.startGame();
 
 		window.setVisible(true);
-		
+
 		while(game.isRunning()) 
 		{
 			moveRobots(game, gg);
@@ -121,29 +125,41 @@ public class SimpleGameClient
 		System.out.println("Game Over: "+results);
 	}
 
+	/**
+	 * Asking the user to play auto or manual
+	 * saving the level chosen by the user
+	 * initialize the game graph
+	 * initialize the a GameServer server that contains all the game fields
+	 */
 	public static void GameInit()
 	{
 
-		JFrame frame = null;
+		frame = null;
 
-		//choose scenario
-		typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
-		scenario_num = 0; 
-
-		if(typegame.equals("manual") || typegame.equals("auto"))
-		{
-			String level = JOptionPane.showInputDialog(frame,"Enter level 0 - 23");
-
-			try
-			{
-				scenario_num = Integer.parseInt(level);
-			}catch(Exception e){}
-		}
+		String user_id = JOptionPane.showInputDialog(frame,"Enter ID");
 		
-		// add the id to start the game
-		String id = JOptionPane.showInputDialog(frame,"Enter yout ID");
-		ID = Integer.parseInt(id);
-		Game_Server.login(ID);
+		try
+		{
+			int id = Integer.parseInt(user_id);
+			//Game_Server.login(id);
+			
+		}catch(Exception e)
+		{
+			System.out.println("Not a valid ID");
+		}
+			//choose scenario
+			typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
+			scenario_num = 0; 
+			
+			if(typegame.equals("manual") || typegame.equals("auto"))
+			{
+				String level = JOptionPane.showInputDialog(frame,"Enter level 0 - 23");
+				
+				try
+				{
+					scenario_num = Integer.parseInt(level);
+				}catch(Exception e){}
+			}
 		game = Game_Server.getServer(scenario_num); // you have [0,23] games
 		g_string = game.getGraph();
 		DG.init(g_string);
@@ -164,6 +180,11 @@ public class SimpleGameClient
 		catch (JSONException e) {e.printStackTrace();}
 	}
 
+	/**
+	 * Creating a new GUI for the game according to the server
+	 * Start the auto play game and move the robots
+	 * 
+	 */
 	public static void autoPlay()
 	{
 		GameGUI window = new GameGUI(server);
@@ -176,7 +197,7 @@ public class SimpleGameClient
 		while( game.isRunning()) 
 		{
 			moveRobots(game, DG);
-		
+
 			window.repaint();
 
 			try 
@@ -188,11 +209,26 @@ public class SimpleGameClient
 			}
 		}
 
+		//printing the game stats at the end
 		String results = game.toString();
 		System.out.println("Game Over: "+results);
-
+		
+		//Saving to kml window
+		String kml =  JOptionPane.showInputDialog(frame,"Save to KML format?");
+		if(kml.equals("yes"))
+		{
+			FileDialog chooser = new FileDialog(frame, "Use a .kml extension", FileDialog.SAVE);
+			chooser.setVisible(true);
+			String filename =chooser.getDirectory()+chooser.getFile();
+			KML.save_kml(filename);
+		}
 	}
 
+	/**
+	 * Creating a new GUI for the game according to the server 
+	 * 
+	 * Starting the manual game
+	 */
 	public static void manualPlay()
 	{
 		GameGUI window = new GameGUI(server);
@@ -205,7 +241,7 @@ public class SimpleGameClient
 		while( game.isRunning()) 
 		{
 			String s_robot = JOptionPane.showInputDialog(frame,"Enter a robot id");
-			
+
 			String s_node = JOptionPane.showInputDialog(frame,"Enter a neighboor node destination");
 			try
 			{
@@ -215,34 +251,27 @@ public class SimpleGameClient
 			catch(Exception e) {}
 
 			moveRobotsM(idr, node, DG);
-		
+
 			window.repaint();
 
-//			try 
-//			{
-//				//Thread.sleep(dt);
-//			} catch (InterruptedException e)
-//			{
-//				e.printStackTrace();
-//			}
-		}
-
-
-		//choose scenario
-		typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
-		scenario_num = 0; 
-
-		if(typegame.equals("manual") || typegame.equals("auto"))
-		{
-			String level = JOptionPane.showInputDialog(frame,"Enter level 0 - 23");
-
-			try
-			{
-				scenario_num = Integer.parseInt(level);
-			}catch(Exception e){}
+			//			try 
+			//			{
+			//				//Thread.sleep(dt);
+			//			} catch (InterruptedException e)
+			//			{
+			//				e.printStackTrace();
+			//			}
 		}
 	}
-	
+
+	/**
+	 * 
+	 * 
+	 * 
+	 * @param id represents the robot id
+	 * @param node represents the node which the robot needs to go to
+	 * @param g represents the game graph
+	 */
 	public static void moveRobotsM(int id, int node,graph g)
 	{
 		GA.init(g);
@@ -259,6 +288,7 @@ public class SimpleGameClient
 					int rid = ttt.getInt("id");
 					int src = ttt.getInt("src");
 					int dest = ttt.getInt("dest");
+					String pos = ttt.getString("pos");
 					if(rid == id)
 					{
 						game.chooseNextEdge(rid, node);
@@ -269,6 +299,13 @@ public class SimpleGameClient
 		}
 	}
 
+	/**
+	 * Auto allocate the robots on the graph according to the fruits in the game
+	 * 
+	 * 
+	 * @param server represents a GameServer object that contain all the game fields
+	 * @param g represents the game graph
+	 */
 	public static void AutoSetRobot(GameServer server,graph g) 
 	{
 		List<String> Total_Fruit = server.getFruit();
@@ -294,6 +331,14 @@ public class SimpleGameClient
 		}
 	}
 
+	/**
+	 * Checking on which edge every fruit is located
+	 * 
+	 * 
+	 * @param f represents a fruit
+	 * @param g represents the game graph
+	 * @return
+	 */
 	public static edge_data onEdge(Fruit f,graph g)
 	{
 		double EPSILON = 0.00001;
@@ -323,12 +368,11 @@ public class SimpleGameClient
 
 	/** 
 	 * Moves each of the robots along the edge, 
-	 * in case the robot is on a node the next destination (next edge) is chosen (randomly).
-	 * @param game
-	 * @param gg
-	 * @param log
+	 * 
+	 * @param game represents the game 
+	 * @param gg represents the game graph
+	 * 
 	 */
-
 	private static void moveRobots(game_service game, graph gg)
 	{
 		GA.init(gg);
@@ -339,11 +383,15 @@ public class SimpleGameClient
 		int next=0;
 		int bestDest=0;
 		edge_data fruitEd = null;
-		if(log!=null) {
+		if(log!=null)
+		{
 			for(int i=0;i<log.size();i++)
 			{
 				fruit = creatFruits(Sfruit);
 				Fruit f = new Fruit();
+				
+				//fruits kml
+				
 				String robot_json = log.get(i);
 				try {
 					JSONObject line = new JSONObject(robot_json);
@@ -351,7 +399,8 @@ public class SimpleGameClient
 					int rid = rob.getInt("id");
 					int src = rob.getInt("src");
 					int dest = rob.getInt("dest");
-
+					String pos = rob.getString("pos");
+					KML.robot_kml(pos, rid);
 					if(dest==-1)
 					{	
 						for(int j=0; j<fruit.size(); j++)
@@ -377,7 +426,7 @@ public class SimpleGameClient
 								}
 							}
 						}
-						
+
 						f.setTag(1);
 						dest = nextNode(gg, src, bestDest, fruitEd);
 						game.chooseNextEdge(rid, dest);
@@ -392,8 +441,8 @@ public class SimpleGameClient
 
 	/**
 	 * 
-	 * @param fruits a list of string represents the fruits in the game
-	 * @return a list of fruits
+	 * @param fruits is a list of string represents the fruits in the game
+	 * @return a list of Fruit 
 	 */
 	private static List<Fruit> creatFruits(List<String> fruits)
 	{
@@ -406,6 +455,14 @@ public class SimpleGameClient
 		return temp;
 	}
 
+	/**
+	 * 
+	 * @param g represents the game graph
+	 * @param src the source of the robots
+	 * @param dest the destination of the robots path
+	 * @param fruitEd the edge on  which the fruit target is located
+	 * @return int value represents the next node key
+	 */
 	private static int nextNode(graph g, int src, int dest, edge_data fruitEd) 
 	{
 		GA.init(g);
@@ -435,4 +492,18 @@ public class SimpleGameClient
 		next = pathQ.poll().getKey();
 		return next;
 	}
+
+//	/**
+//	 * Updating the kml according to the robots in the game
+//	 * 
+//	 * 
+//	 */
+//	private void Updating_kml() 
+//	{
+//		for (int i = 0; i < robots_list.size(); i++) 
+//		{
+//			kml.add_kml(robots_list.get(i).stringTokml());
+//		} 
+//		kml.add_kml(fruits.end_kml());
+//	}
 }
