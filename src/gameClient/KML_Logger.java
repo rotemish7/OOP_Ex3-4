@@ -77,7 +77,7 @@ public class KML_Logger
 		String file_name = filename;
 		end_kml();
 		
-		System.out.println(buff_kml);
+		//System.out.println(buff_kml);
 		
 		try {
 			
