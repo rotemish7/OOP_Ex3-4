@@ -46,6 +46,7 @@ public class SimpleGameClient
 	private static String g_string;
 	private static game_service game;
 	private static int scenario_num;
+	private static int ID;
 	private static DGraph DG = new DGraph();
 	private static Graph_Algo GA = new Graph_Algo();
 	private static GameServer server = new GameServer();
@@ -138,12 +139,18 @@ public class SimpleGameClient
 				scenario_num = Integer.parseInt(level);
 			}catch(Exception e){}
 		}
-
+		
+		// add the id to start the game
+		String id = JOptionPane.showInputDialog(frame,"Enter yout ID");
+		ID = Integer.parseInt(id);
+		Game_Server.login(ID);
 		game = Game_Server.getServer(scenario_num); // you have [0,23] games
 		g_string = game.getGraph();
 		DG.init(g_string);
 		String info = game.toString();
 		JSONObject line;
+//		String remark = "This string should be a KML file!!";
+//		game.sendKML(remark); // Should be your KML (will not work on case -1).
 
 		try
 		{
@@ -163,6 +170,8 @@ public class SimpleGameClient
 		window.setVisible(true);
 		game.startGame();
 
+		// level 0,1,3: dt =100
+		// level 5: dt = 110
 		int dt = 100;
 		while( game.isRunning()) 
 		{
@@ -267,7 +276,7 @@ public class SimpleGameClient
 
 		for (int i = 0; i < server.getRobots(); i++) 
 		{
-			int maxFruit = Integer.MIN_VALUE;
+			double maxFruit = Double.MIN_VALUE;
 			int MaxFruitID = 0;
 
 			for (int j = 0; j < Total_Fruit.size(); j++)
@@ -338,11 +347,10 @@ public class SimpleGameClient
 				String robot_json = log.get(i);
 				try {
 					JSONObject line = new JSONObject(robot_json);
-					System.out.println("str: " + robot_json);
-					JSONObject ttt = line.getJSONObject("Robot");
-					int rid = ttt.getInt("id");
-					int src = ttt.getInt("src");
-					int dest = ttt.getInt("dest");
+					JSONObject rob = line.getJSONObject("Robot");
+					int rid = rob.getInt("id");
+					int src = rob.getInt("src");
+					int dest = rob.getInt("dest");
 
 					if(dest==-1)
 					{	
@@ -374,7 +382,7 @@ public class SimpleGameClient
 						dest = nextNode(gg, src, bestDest, fruitEd);
 						game.chooseNextEdge(rid, dest);
 						System.out.println("Turn to node: "+dest);
-						System.out.println(ttt);
+						System.out.println(rob);
 					}
 				} 
 				catch (JSONException e) {e.printStackTrace();}
