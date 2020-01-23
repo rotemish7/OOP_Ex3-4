@@ -57,7 +57,6 @@ public class SimpleGameClient
 	public static void main(String[] a) 
 	{
 		GameInit();
-
 		g_string = game.getGraph();
 		DG.init(g_string);
 		KML = new KML_Logger(scenario_num);
@@ -296,7 +295,7 @@ public class SimpleGameClient
 
 		for (int i = 0; i < server.getRobots(); i++) 
 		{
-			int maxFruit = Integer.MIN_VALUE;
+			double maxFruit = Double.MIN_VALUE;
 			int MaxFruitID = 0;
 
 			for (int j = 0; j < Total_Fruit.size(); j++)
@@ -374,10 +373,11 @@ public class SimpleGameClient
 				String robot_json = log.get(i);
 				try {
 					JSONObject line = new JSONObject(robot_json);
-					JSONObject ttt = line.getJSONObject("Robot");
-					int rid = ttt.getInt("id");
-					int src = ttt.getInt("src");
-					int dest = ttt.getInt("dest");
+					System.out.println("str: " + robot_json);
+					JSONObject rob = line.getJSONObject("Robot");
+					int rid = rob.getInt("id");
+					int src = rob.getInt("src");
+					int dest = rob.getInt("dest");
 
 					if(dest==-1)
 					{	
@@ -408,9 +408,8 @@ public class SimpleGameClient
 						f.setTag(1);
 						dest = nextNode(gg, src, bestDest, fruitEd);
 						game.chooseNextEdge(rid, dest);
-						System.out.println("bestDest: " + bestDest);
 						System.out.println("Turn to node: "+dest);
-						System.out.println(ttt);
+						System.out.println(rob);
 					}
 				} 
 				catch (JSONException e) {e.printStackTrace();}

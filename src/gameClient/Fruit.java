@@ -10,14 +10,14 @@ import utils.Point3D;
 public class Fruit 
 {
 
-	private int value;
+	private double value;
 	private int type;
 	private Point3D pos;
 	private int tag;
 
 	public Fruit() {}
 	
-	public Fruit(int value, int type, Point3D pos)
+	public Fruit(double value, int type, Point3D pos)
 	{
 		this.value=value;
 		this.type=type;
@@ -33,7 +33,7 @@ public class Fruit
 			JSONObject JSON_Fruit = obj_JSONObject.getJSONObject("Fruit");
 			String pos = JSON_Fruit.getString("pos");// Extract the coordinates to String
 			this.pos = new Point3D(pos);
-			int value = JSON_Fruit.getInt("value"); // Extract the value of the fruit
+			double value = JSON_Fruit.getInt("value"); // Extract the value of the fruit
 			this.value = value;
 			int type = JSON_Fruit.getInt("type"); // Extract the type of the fruit
 			this.type = type;
@@ -61,7 +61,7 @@ public class Fruit
 		this.tag = tag;
 	}
 
-	public int getValue()
+	public double getValue()
 	{
 		return this.value;
 	}
