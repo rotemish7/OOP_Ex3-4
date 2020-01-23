@@ -1,6 +1,8 @@
 package gameClient;
 
 import java.io.PrintWriter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class KML_Logger 
 {
@@ -43,7 +45,7 @@ public class KML_Logger
 		else
 		{
 			buff_kml.append(
-							"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
+					"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n" + 
 							"<kml xmlns=\"http://earth.google.com/kml/2.2\">\r\n" + 
 							"  <Document>\r\n" + 
 							"    <name>KML path</name>\r\n" + 
@@ -61,33 +63,71 @@ public class KML_Logger
 							"    </LookAt>\r\n"
 					);
 		}
+	}
 
+	public void robot_kml(String pos,int id)
+	{
+		//initialize
+		String temp = " <Style id=\"robot_icon\">\r\n" + 
+				"      <IconStyle>\r\n" + 
+				"        <Icon>\r\n" + 
+				"          <href>https://img.icons8.com/color/128/000000/transformer.png</href>\r\n" + 
+				"        </Icon>\r\n" + 
+				"      </IconStyle>\r\n" + 
+				"    </Style>";
+
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+		LocalDateTime now = LocalDateTime.now();
+		
+		buff_kml.append("<Folder>\r\n" + 
+				"      <name>robot"+id+" folder</name>\r\n" + 
+				"      <open>1</open>\r\n" + 
+				"      <Style>\r\n" + 
+				"        <ListStyle>\r\n" + 
+				"          <listItemType>"+"robot-"+id+" path"+"</listItemType>\r\n" + 
+				"        </ListStyle>\r\n" + 
+				"      </Style>/n" +
+				"      "
+				+ "	   <Placemark>\r\n" + 
+				"        <TimeStamp>\r\n" + 
+				"          <when>"+now+"</when>\r\n" + 
+				"        </TimeStamp>\r\n" + 
+				"        <styleUrl>#robot_icon</styleUrl>\r\n" + 
+				"        <Point>\r\n" + 
+				"			<coordinates>"+ pos +"</coordinates>\r\n" + 
+				"        </Point>\r\n" + 
+				"      </Placemark>\n"
+				);
 	}
 	
-	public void end_kml()
+	public String stringTokml() 
 	{
-		buff_kml.append("\n"+
-						"	</Document>\n"+
-						"</kml>"
-		);
-	}
-	
-	public void save_kml(String filename)
-	{
-		String file_name = filename;
-		end_kml();
-		
-		//System.out.println(buff_kml);
-		
-		try {
-			
-			PrintWriter p_w = new PrintWriter(file_name);
-			p_w.println(buff_kml.toString());
-			p_w.close();
-			System.out.println("File saved");
-			
-		} catch (Exception e) {System.out.println("problem");}	
+		this.buff_kml.append("</Folder>\r\n");
+
+		return buff_kml.toString();
 	}
 
 
+public void end_kml()
+{
+	buff_kml.append("\n"+
+			"	</Document>\n"+
+			"</kml>"
+			);
+}
+
+public void save_kml(String filename)
+{
+	String file_name = filename;
+	end_kml();
+
+	try {
+
+		PrintWriter p_w = new PrintWriter(file_name);
+		p_w.println(buff_kml.toString());
+		p_w.close();
+		System.out.println("File saved");
+
+	} catch (Exception e) {System.out.println("problem");}	
+}
 }

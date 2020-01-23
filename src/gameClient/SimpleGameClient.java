@@ -45,6 +45,8 @@ public class SimpleGameClient
 	//static GameGUI window;
 	private static String typegame;
 	private static String g_string;
+	private String Robots_kml="";
+	private String Fruits_kml="";
 	private static game_service game;
 	private static int scenario_num;
 	private static DGraph DG = new DGraph();
@@ -52,7 +54,7 @@ public class SimpleGameClient
 	private static GameServer server = new GameServer();
 	private static KML_Logger KML;
 	private static JFrame frame;
-
+	private static int id = 0;
 
 	public static void main(String[] a) 
 	{
@@ -133,19 +135,31 @@ public class SimpleGameClient
 
 		frame = null;
 
-		//choose scenario
-		typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
-		scenario_num = 0; 
-
-		if(typegame.equals("manual") || typegame.equals("auto"))
+		String user_id = JOptionPane.showInputDialog(frame,"Enter ID");
+		
+		try
 		{
-			String level = JOptionPane.showInputDialog(frame,"Enter level 0 - 23");
-
-			try
-			{
-				scenario_num = Integer.parseInt(level);
-			}catch(Exception e){}
+			int id = Integer.parseInt(user_id);
+			//Game_Server.login(id);
+			
+		}catch(Exception e)
+		{
+			System.out.println("Not a valid ID");
 		}
+		
+			//choose scenario
+			typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
+			scenario_num = 0; 
+			
+			if(typegame.equals("manual") || typegame.equals("auto"))
+			{
+				String level = JOptionPane.showInputDialog(frame,"Enter level 0 - 23");
+				
+				try
+				{
+					scenario_num = Integer.parseInt(level);
+				}catch(Exception e){}
+			}
 
 		game = Game_Server.getServer(scenario_num); // you have [0,23] games
 		g_string = game.getGraph();
@@ -271,6 +285,7 @@ public class SimpleGameClient
 					int rid = ttt.getInt("id");
 					int src = ttt.getInt("src");
 					int dest = ttt.getInt("dest");
+					String pos = ttt.getString("pos");
 					if(rid == id)
 					{
 						game.chooseNextEdge(rid, node);
@@ -365,20 +380,26 @@ public class SimpleGameClient
 		int next=0;
 		int bestDest=0;
 		edge_data fruitEd = null;
-		if(log!=null) {
+		if(log!=null)
+		{
 			for(int i=0;i<log.size();i++)
 			{
 				fruit = creatFruits(Sfruit);
 				Fruit f = new Fruit();
+				
+				//fruits kml
+				
 				String robot_json = log.get(i);
 				try {
 					JSONObject line = new JSONObject(robot_json);
-					System.out.println("str: " + robot_json);
+					//System.out.println("str: " + robot_json);
 					JSONObject rob = line.getJSONObject("Robot");
 					int rid = rob.getInt("id");
 					int src = rob.getInt("src");
 					int dest = rob.getInt("dest");
-
+					String pos = rob.getString("pos");
+					KML.robot_kml(pos, rid);
+					
 					if(dest==-1)
 					{	
 						for(int j=0; j<fruit.size(); j++)
@@ -471,17 +492,17 @@ public class SimpleGameClient
 		return next;
 	}
 
-	/**
-	 * Updating the kml accoridng to the robots in the game
-	 * 
-	 * 
-	 */
-	private void Updating_kml() 
-	{
-		for (int i = 0; i < robots_list.size(); i++) 
-		{
-			kml.add_kml(robots_list.get(i).stringTokml());
-		} 
-		kml.add_kml(fruits.end_kml());
-	}
+//	/**
+//	 * Updating the kml according to the robots in the game
+//	 * 
+//	 * 
+//	 */
+//	private void Updating_kml() 
+//	{
+//		for (int i = 0; i < robots_list.size(); i++) 
+//		{
+//			kml.add_kml(robots_list.get(i).stringTokml());
+//		} 
+//		kml.add_kml(fruits.end_kml());
+//	}
 }
