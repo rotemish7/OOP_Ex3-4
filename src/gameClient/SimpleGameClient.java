@@ -56,6 +56,7 @@ public class SimpleGameClient
 	private static KML_Logger KML;
 	private static JFrame frame;
 	private static int id = 0;
+	private static int dt;
 
 	public static void main(String[] a) 
 	{
@@ -137,36 +138,36 @@ public class SimpleGameClient
 		frame = null;
 
 		String user_id = JOptionPane.showInputDialog(frame,"Enter ID");
-		
+
 		try
 		{
 			int id = Integer.parseInt(user_id);
 			//Game_Server.login(id);
-			
+
 		}catch(Exception e)
 		{
 			System.out.println("Not a valid ID");
 		}
-			//choose scenario
-			typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
-			scenario_num = 0; 
-			
-			if(typegame.equals("manual") || typegame.equals("auto"))
+		//choose scenario
+		typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
+		scenario_num = 0; 
+
+		if(typegame.equals("manual") || typegame.equals("auto"))
+		{
+			String level = JOptionPane.showInputDialog(frame,"Enter level 0 - 23");
+
+			try
 			{
-				String level = JOptionPane.showInputDialog(frame,"Enter level 0 - 23");
-				
-				try
-				{
-					scenario_num = Integer.parseInt(level);
-				}catch(Exception e){}
-			}
+				scenario_num = Integer.parseInt(level);
+			}catch(Exception e){}
+		}
 		game = Game_Server.getServer(scenario_num); // you have [0,23] games
 		g_string = game.getGraph();
 		DG.init(g_string);
 		String info = game.toString();
 		JSONObject line;
-//		String remark = "This string should be a KML file!!";
-//		game.sendKML(remark); // Should be your KML (will not work on case -1).
+		//		String remark = "This string should be a KML file!!";
+		//		game.sendKML(remark); // Should be your KML (will not work on case -1).
 
 		try
 		{
@@ -193,11 +194,11 @@ public class SimpleGameClient
 
 		// level 0,1,3: dt =100
 		// level 5: dt = 110
-		int dt = 100;
 		while( game.isRunning()) 
 		{
+			dt = 100;
 			moveRobots(game, DG);
-
+			//318511375
 			window.repaint();
 
 			try 
@@ -212,7 +213,7 @@ public class SimpleGameClient
 		//printing the game stats at the end
 		String results = game.toString();
 		System.out.println("Game Over: "+results);
-		
+
 		//Saving to kml window
 		String kml =  JOptionPane.showInputDialog(frame,"Save to KML format?");
 		if(kml.equals("yes"))
@@ -250,7 +251,7 @@ public class SimpleGameClient
 			}
 			catch(Exception e) {}
 
-			moveRobotsM(idr, node, DG);
+			//moveRobotsM(idr, node, DG);
 
 			window.repaint();
 
@@ -380,6 +381,7 @@ public class SimpleGameClient
 		List<String> Sfruit = game.getFruits();
 		List<Fruit> fruit = creatFruits(Sfruit);
 		double minPath = Double.POSITIVE_INFINITY;
+		edge_data ed = null;
 		int next=0;
 		int bestDest=0;
 		edge_data fruitEd = null;
@@ -389,9 +391,9 @@ public class SimpleGameClient
 			{
 				fruit = creatFruits(Sfruit);
 				Fruit f = new Fruit();
-				
+
 				//fruits kml
-				
+
 				String robot_json = log.get(i);
 				try {
 					JSONObject line = new JSONObject(robot_json);
@@ -407,8 +409,8 @@ public class SimpleGameClient
 						{
 							if(fruit.get(j).getTag() == 0)
 							{
-								edge_data ed = onEdge(fruit.get(j), gg);
-								if (fruit.get(0).getType() ==1) 
+								ed = onEdge(fruit.get(j), gg);
+								if (fruit.get(0).getType() == 1) 
 								{
 									next = ed.getDest();
 								}
@@ -429,6 +431,10 @@ public class SimpleGameClient
 
 						f.setTag(1);
 						dest = nextNode(gg, src, bestDest, fruitEd);
+						if(ed.getDest() != dest && ed.getSrc() != dest)
+						{
+							dt = 200;
+						}
 						game.chooseNextEdge(rid, dest);
 						System.out.println("Turn to node: "+dest);
 						System.out.println(rob);
@@ -465,7 +471,35 @@ public class SimpleGameClient
 	 */
 	private static int nextNode(graph g, int src, int dest, edge_data fruitEd) 
 	{
+
 		GA.init(g);
+		long t =game.timeToEnd();
+		if(t%100 == 0 && t/1000>20)
+		{
+			List<Fruit> fruit = creatFruits(game.getFruits());
+			int next=0, bestDest=0;
+			double maxValue=0;
+			for(int j=0; j<fruit.size(); j++)
+			{
+				edge_data ed = onEdge(fruit.get(j), g);
+				if (fruit.get(0).getValue() ==1) 
+				{
+					next = ed.getDest();
+				}
+				else
+				{
+					next = ed.getSrc();
+				}
+				double value = fruit.get(j).getValue();
+				if(maxValue<value)
+				{
+					maxValue = value;
+					bestDest = next;
+					fruitEd = ed;
+				}
+			}
+			dest = bestDest;
+		}
 		List<node_data> path = GA.shortestPath(src, dest);
 		Queue<node_data> pathQ = new LinkedList<node_data>();
 		pathQ.addAll(path);
@@ -493,17 +527,17 @@ public class SimpleGameClient
 		return next;
 	}
 
-//	/**
-//	 * Updating the kml according to the robots in the game
-//	 * 
-//	 * 
-//	 */
-//	private void Updating_kml() 
-//	{
-//		for (int i = 0; i < robots_list.size(); i++) 
-//		{
-//			kml.add_kml(robots_list.get(i).stringTokml());
-//		} 
-//		kml.add_kml(fruits.end_kml());
-//	}
+	//	/**
+	//	 * Updating the kml according to the robots in the game
+	//	 * 
+	//	 * 
+	//	 */
+	//	private void Updating_kml() 
+	//	{
+	//		for (int i = 0; i < robots_list.size(); i++) 
+	//		{
+	//			kml.add_kml(robots_list.get(i).stringTokml());
+	//		} 
+	//		kml.add_kml(fruits.end_kml());
+	//	}
 }
