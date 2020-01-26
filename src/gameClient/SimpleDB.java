@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import java.util.HashMap;
+import java.util.List;
+
+import com.mysql.fabric.xmlrpc.base.Array;
 /**
  * This class represents a simple example of using MySQL Data-Base.
  * Use this example for writing solution. 
@@ -29,7 +33,8 @@ public class SimpleDB
 	 */
 	public static void main(String[] args) 
 	{
-		int idR = 316334440;
+
+		int idR = 311464671;
 		int idS = 318511375;
 		insertGrades();
 		insertMoves();

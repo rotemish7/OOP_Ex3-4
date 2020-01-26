@@ -24,6 +24,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -42,12 +43,6 @@ import java.text.DecimalFormat;
 
 public class GameGUI extends JFrame implements ActionListener, MouseListener, Runnable, Observer 
 {
-
-	/////////////////////////////////////////////////////////////////
-	//////////////////////////GUI_fields/////////////////////////////
-	////////////////////////////////////////////////////////////////
-
-
 	//private static final Graphics Graphics = null;
 	private static DecimalFormat df2 = new DecimalFormat("#.##");
 	static JTextField textfield1, textfield2, textfield3;
@@ -60,11 +55,10 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 	Graphics doubleD; 
 	int Level;
 	Graphics2D g4;
+	private static SimpleDB db = new SimpleDB();
 
 
-	/////////////////////////////////////////////////////////////////
-	/////////////////////GUI_window_fields//////////////////////////
-	////////////////////////////////////////////////////////////////
+	//gui fields
 	private double maxX = Double.NEGATIVE_INFINITY;
 	private double maxY = Double.NEGATIVE_INFINITY;
 	private double minX = Double.POSITIVE_INFINITY;
@@ -83,12 +77,16 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 	private DGraph DG = new DGraph();
 	private game_service game;
 
-
-	/////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	/////////////////////////   Constructor  \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	//////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	/**
+	 * constructor
+	 * 
+	 */
 	public GameGUI() {}
-	
+
+	/**
+	 * 
+	 * @param server 
+	 */
 	public GameGUI(GameServer server)
 	{
 		initGUI();
@@ -117,35 +115,29 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 		this.Level= gamechooser;
 	}
 
-	/////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	/////////////////////////   window settings  \\\\\\\\\\\\\\\\\\\\\\\\\\
-	//////////////////////////////////\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 	private void initGUI() 
 	{
-
+		
 		this.setSize(defaultx,defaulty);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-		ImageIcon ImageIcon5 = new ImageIcon("data\\GameIcon.jpg");
-		Image GameIcon  =	ImageIcon5.getImage();
-		this.setIconImage(GameIcon);
 
 		//creating menu bar//
 		MenuBar menuBar	 = new MenuBar();
 		Menu menu_file1	 = new Menu("file");
-
+		Menu DB	 = new Menu("DataBase");
 
 		//adding the file section to the menu bar//
 		menuBar.add(menu_file1);
+		menuBar.add(DB);
 
 		this.setMenuBar(menuBar);
-
-		//creating a item in bar for short path
+		
+		//creating a item in bar for Save
 		MenuItem Save = new MenuItem("Save"); 
 		Save.addActionListener(this);
 
-		//creating a item in bar for short path
+		//creating a item in bar for Load
 		MenuItem Load = new MenuItem("Load"); 
 		Load.addActionListener(this);
 
@@ -153,11 +145,26 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 		MenuItem clean_all = new MenuItem("clean all"); 
 		clean_all.addActionListener(this);
 
-		//adding to menus:\\
-		//file
+		//DB options
+		MenuItem games_played = new MenuItem("Games Played"); 
+		games_played.addActionListener(this);
+		
+		MenuItem best_score = new MenuItem("Best Score"); 
+		best_score.addActionListener(this);
+		
+		MenuItem high_score = new MenuItem("Highest Level"); 
+		high_score.addActionListener(this);
+
+		//file bar
 		menu_file1.add(Save);
 		menu_file1.add(Load);
 		menu_file1.add(clean_all);
+		
+		
+		//DataBase bar
+		DB.add(games_played);
+		DB.add(best_score);
+		DB.add(high_score);
 
 
 		//listen to the mouse\\
@@ -165,15 +172,88 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 
 	}
 
+	@Override
+	public void actionPerformed(ActionEvent e)
+	{
+		String command = e.getActionCommand();
+
+		if(command.equals("Games Played"))
+		{
+			JFrame frame = null;
+			String id = JOptionPane.showInputDialog(frame,"Enter id");
+			int idr = Integer.parseInt(id);
+			int games = SimpleDB.printLog(idr);
+			JOptionPane.showMessageDialog(frame,"ID: " + id +"\n" + "Games Played: " + games);
+		}
+		
+		if(command.equals("Highest Level"))
+		{
+			JFrame frame = null;
+			String gameEnd = game.toString();
+			String id = JOptionPane.showInputDialog(frame,"Enter id");
+			int idr = Integer.parseInt(id);
+			JOptionPane.showMessageDialog(frame,"ID: " + id+"\n" + "Best Level: " + SimpleDB.userBestLevel(idr));
+//			try
+//			{
+//				
+//				
+//				JSONObject line = new JSONObject(gameEnd);
+//				JSONObject ttt = line.getJSONObject("GameServer");
+//				int user_level = ttt.getInt("max_user_level");
+//				JOptionPane.showMessageDialog(frame,"ID: " + id+"\n" + "Best Level: " + user_level);
+//				//System.out.println("Highest level: " + user_level);
+//			}
+//			catch (JSONException ex) {ex.printStackTrace();}
+		}
+		
+		if(command.equals("Best Score"))
+		{
+			JFrame frame = null;
+			String id = JOptionPane.showInputDialog(frame,"Enter ID");
+			String level = JOptionPane.showInputDialog(frame,"Enter Level");
+			JOptionPane.showMessageDialog(frame,"ID: " + id+"\n" +"Level: " + level +"\n" + "Best Score: " + 3);
+		}
+	}
+	
+	@Override
+	public void mouseClicked(MouseEvent e) {}
+	@Override
+	public void mouseEntered(MouseEvent e) {}
+	@Override
+	public void mouseExited(MouseEvent e) {}
+	@Override
+	public void mousePressed(MouseEvent e) {}
+	@Override
+	public void mouseReleased(MouseEvent e) {}
+	
+	
+	@Override
+	public void run() 
+	{
+		repaint();
+	}
+	
+	@Override
+	public void update(Observable o, Object arg) 
+	{
+		repaint();
+		run();
+	}
+
+	
+	// buffered image fields
 	private BufferedImage buff;
 	private  Graphics2D g2;
 	JLabel background = null;
-	
-	//////////////////////////////////////////////Paint///////////////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	/**
+	 * paint the graph
+	 * 
+	 * 
+	 * @param g graphics
+	 */
 	public void paint(Graphics g)
 	{	
-
 		/**
 		 * double buffering section---
 		 */
@@ -206,51 +286,26 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 
 		paintFruits();		
 		paintRobots();
-
 	}
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////////////////////////////////EndPaint//////////////////////////////////////////////////////////////
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	@Override
-	public void mouseClicked(MouseEvent e) {}
-	@Override
-	public void mouseEntered(MouseEvent e) {}
-	@Override
-	public void mouseExited(MouseEvent e) {}
-	@Override
-	public void mousePressed(MouseEvent e) {}
-	@Override
-	public void mouseReleased(MouseEvent e) {}
-	@Override
-	public void actionPerformed(ActionEvent e){}
-	@Override
-	public void run() 
-	{
-		repaint();}
-	@Override
-	public void update(Observable o, Object arg) 
-	{
-		repaint();
-		run();
-	}
-
+	/**
+	 * Painting the graph on the window
+	 * 
+	 * @param g represents a graphics
+	 */
 	private void paintgraph(Graphics g) 
 	{
 		super.paintComponents(g);
 		Graphics2D g4 = (Graphics2D) g;
 
 		g.setColor(Color.blue);
-		
+
 		g4.setStroke(new BasicStroke(5));
-		
+
 		//sets the txt size 
 		float f=13.0f; // font size.
 		g4.setFont(g4.getFont().deriveFont(f));
-		
+
 		//go through all the nodes in the graph
 		for (node_data node_data : graph.getV()) 
 		{
@@ -299,7 +354,7 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 		G.setColor(Color.GREEN);
 		G.setFont(G.getFont().deriveFont(f1));
 		G.drawString("Time-Left    "+game.timeToEnd()/1000,(int)(defaultx*0.861),(int)(defaulty*0.91));
-		
+
 		f1 = 35.0f;
 		G.setFont(G.getFont().deriveFont(f1));
 		G.drawString("Level -- "+this.Level,(int)(defaultx*0.5),(int)(defaulty*0.15));
@@ -309,9 +364,11 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 		g4.drawString("Score:", (int)(defaultx*0.03), (int)(defaulty*0.15));
 	}
 
-	///////////////////////////////////////////////////Paint Graph End////////////////////////////////////////////////////////
-
-	///////////////////////////////////////////////////Paint Fruits///////////////////////////////////////////////////////////
+	/**
+	 * paint the druits
+	 * 
+	 * 
+	 */
 	private void paintFruits() 
 	{
 		List<String> Fruit = game.getFruits();
@@ -326,7 +383,7 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 				double type = ff.getDouble("type");
 				String pos = ff.getString("pos");
 				Point3D p = new Point3D(pos);
-				
+
 				double p_x = scale(p.x(),minX,maxX,80,this.getWidth()-80);
 				double p_y = scale(p.y(),minY,maxY,80,this.getHeight()-80);
 				ImageIcon apple = new ImageIcon("apple.png");
@@ -345,7 +402,12 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 			} catch (JSONException e) {e.printStackTrace();}
 		}
 	}
-	///////////////////////////////////////////////////Paint smurfs End//////////////////////////////////////////////////////
+	
+	/**
+	 * paint the robots
+	 * 
+	 * 
+	 */
 	private void paintRobots() 
 	{
 		List<String> ArnoldSchwarzenegge = game.getRobots();
@@ -364,7 +426,7 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 				double p_x = scale(p.x(),minX,maxX,80,this.getWidth()-80);
 				double p_y = scale(p.y(),minY,maxY,80,this.getHeight()-80);
 				_score += score;
-				
+
 				ImageIcon ghost = new ImageIcon("ghost.png");
 				Image  ghost1  = ghost.getImage();
 				g4.drawImage(ghost1, (int)p_x-30, (int)p_y-30,80,80, this);
@@ -379,12 +441,22 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 		g4.drawString(""+_score,  (int)(defaultx*0.1),  (int)(defaulty*0.15));
 	}
 
+	/**
+	 * 
+	 * @param data
+	 * @param r_min
+	 * @param r_max
+	 * @param t_min
+	 * @param t_max
+	 * @return
+	 */
 	private double scale(double data, double r_min, double r_max,double t_min, double t_max)		
 	{
 		double res = ((data - r_min) / (r_max-r_min)) * (t_max - t_min) + t_min;
 		return res;
 	}
 
+	//scaling the window
 	public void windowScale()
 	{
 		for (node_data nodes : this.graph.getV()) 
@@ -408,20 +480,3 @@ public class GameGUI extends JFrame implements ActionListener, MouseListener, Ru
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
