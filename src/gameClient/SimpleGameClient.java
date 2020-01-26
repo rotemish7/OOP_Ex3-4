@@ -48,13 +48,16 @@ public class SimpleGameClient implements Runnable
 	private String Fruits_kml="";
 	private static game_service game;
 	private static int scenario_num;
+	private static int ID;
 	private static DGraph DG = new DGraph();
 	private static Graph_Algo GA = new Graph_Algo();
 	private static GameServer server = new GameServer();
 	private static KML_Logger KML;
 	private static JFrame frame;
 	private static int id = 0;
+
 	private static int dt = -1;
+
 
 	/**
 	 * 
@@ -98,16 +101,15 @@ public class SimpleGameClient implements Runnable
 		frame = null;
 
 		String user_id = JOptionPane.showInputDialog(frame,"Enter ID");
-		
+
 		try
 		{
 			id = Integer.parseInt(user_id);
-			
 		}catch(Exception e)
 		{
 			System.out.println("Not a valid ID");
 		}
-		
+
 			//choose scenario
 			Game_Server.login(id);
 			
@@ -129,6 +131,8 @@ public class SimpleGameClient implements Runnable
 		DG.init(g_string);
 		String info = game.toString();
 		JSONObject line;
+		//		String remark = "This string should be a KML file!!";
+		//		game.sendKML(remark); // Should be your KML (will not work on case -1).
 
 		try
 		{
@@ -152,17 +156,22 @@ public class SimpleGameClient implements Runnable
 		GameGUI window = new GameGUI(server);
 		window.setVisible(true);
 		game.startGame();
-		
+
 		dt = 115;
 				
+		// level 0,1,3: dt =100
+		// level 5: dt = 110
+
 		while( game.isRunning()) 
 		{
 			moveRobots(game, DG);
+
 			
 			if(game.timeToEnd()/1000 < 10)
 			{
 				dt = 67;
 			}
+
 			window.repaint();
 
 			try 
@@ -177,7 +186,7 @@ public class SimpleGameClient implements Runnable
 		//printing the game stats at the end
 		String results = game.toString();
 		System.out.println("Game Over: "+results);
-		
+
 		//Saving to kml window
 		String kml =  JOptionPane.showInputDialog(frame,"Save to KML format?");
 		if(kml.equals("yes"))
@@ -217,7 +226,7 @@ public class SimpleGameClient implements Runnable
 			}
 			catch(Exception e) {}
 
-			moveRobotsM(idr, node, DG);
+			//moveRobotsM(idr, node, DG);
 
 			window.repaint();
 		}
@@ -341,6 +350,7 @@ public class SimpleGameClient implements Runnable
 		List<String> Sfruit = game.getFruits();
 		List<Fruit> fruit = creatFruits(Sfruit);
 		double minPath = Double.POSITIVE_INFINITY;
+		edge_data ed = null;
 		int next=0;
 		int bestDest=0;
 		edge_data fruitEd = null;
@@ -350,9 +360,9 @@ public class SimpleGameClient implements Runnable
 			{
 				fruit = creatFruits(Sfruit);
 				Fruit f = new Fruit();
-				
+
 				//fruits kml
-				
+
 				String robot_json = log.get(i);
 				try {
 					JSONObject line = new JSONObject(robot_json);
@@ -362,15 +372,14 @@ public class SimpleGameClient implements Runnable
 					int dest = rob.getInt("dest");
 					String pos = rob.getString("pos");
 					KML.robot_kml(pos, rid);
-					
 					if(dest==-1)
 					{	
 						for(int j=0; j<fruit.size(); j++)
 						{
 							if(fruit.get(j).getTag() == 0)
 							{
-								edge_data ed = onEdge(fruit.get(j), gg);
-								if (fruit.get(0).getType() ==1) 
+								ed = onEdge(fruit.get(j), gg);
+								if (fruit.get(0).getType() == 1) 
 								{
 									next = ed.getDest();
 								}
@@ -391,6 +400,10 @@ public class SimpleGameClient implements Runnable
 
 						f.setTag(1);
 						dest = nextNode(gg, src, bestDest, fruitEd);
+						if(ed.getDest() != dest && ed.getSrc() != dest)
+						{
+							dt = 200;
+						}
 						game.chooseNextEdge(rid, dest);
 						System.out.println("Turn to node: "+dest);
 						System.out.println(rob);
@@ -427,7 +440,35 @@ public class SimpleGameClient implements Runnable
 	 */
 	private static int nextNode(graph g, int src, int dest, edge_data fruitEd) 
 	{
+
 		GA.init(g);
+		long t =game.timeToEnd();
+		if(t%100 == 0 && t/1000>20)
+		{
+			List<Fruit> fruit = creatFruits(game.getFruits());
+			int next=0, bestDest=0;
+			double maxValue=0;
+			for(int j=0; j<fruit.size(); j++)
+			{
+				edge_data ed = onEdge(fruit.get(j), g);
+				if (fruit.get(0).getValue() ==1) 
+				{
+					next = ed.getDest();
+				}
+				else
+				{
+					next = ed.getSrc();
+				}
+				double value = fruit.get(j).getValue();
+				if(maxValue<value)
+				{
+					maxValue = value;
+					bestDest = next;
+					fruitEd = ed;
+				}
+			}
+			dest = bestDest;
+		}
 		List<node_data> path = GA.shortestPath(src, dest);
 		Queue<node_data> pathQ = new LinkedList<node_data>();
 		pathQ.addAll(path);
@@ -460,20 +501,4 @@ public class SimpleGameClient implements Runnable
 	{
 		gameRunner();
 	}
-
-	
-
-//	/**
-//	 * Updating the kml according to the robots in the game
-//	 * 
-//	 * 
-//	 */
-//	private void Updating_kml() 
-//	{
-//		for (int i = 0; i < robots_list.size(); i++) 
-//		{
-//			kml.add_kml(robots_list.get(i).stringTokml());
-//		} 
-//		kml.add_kml(fruits.end_kml());
-//	}
 }
