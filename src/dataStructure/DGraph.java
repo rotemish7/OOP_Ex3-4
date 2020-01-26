@@ -36,6 +36,11 @@ public class DGraph extends Observable implements graph, Serializable
 		this.ESize = esize;
 	}
 
+	/**
+	 * initialize the graph from a string
+	 * 
+	 * @param data represents a string that hold all the graph nodes and edges
+	 */
 	public void init(String data)
 	{
 		try
@@ -279,6 +284,8 @@ public class DGraph extends Observable implements graph, Serializable
 	}
 	
 	/**
+	 * Creating a String in kml style from with the edge Coordinates
+	 * 
 	 * 
 	 */
 	public String edge_to_kml(node_data src,node_data dest) 

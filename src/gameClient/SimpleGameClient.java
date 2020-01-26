@@ -2,7 +2,6 @@ package gameClient;
 
 import java.awt.FileDialog;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -21,7 +20,7 @@ import dataStructure.DGraph;
 import dataStructure.edge_data;
 import dataStructure.graph;
 import dataStructure.node_data;
-import sun.font.CreatedFontTracker;
+import gameClient.GameGUI;
 /**
  * This class represents a simple example for using the GameServer API:
  * the main file performs the following tasks:
@@ -39,7 +38,7 @@ import sun.font.CreatedFontTracker;
  * @author boaz.benmoshe
  *
  */
-public class SimpleGameClient 
+public class SimpleGameClient implements Runnable
 {
 
 	//static GameGUI window;
@@ -55,8 +54,18 @@ public class SimpleGameClient
 	private static KML_Logger KML;
 	private static JFrame frame;
 	private static int id = 0;
+	private static int dt = -1;
 
-	public static void main(String[] a) 
+	/**
+	 * 
+	 * initialize all the arguments for the necessary functions 
+	 * 
+	 * set the first location for the robots
+	 * 
+	 * open a KML Logger
+	 * open the right function according to auto or manual play
+	 */
+	private void gameRunner() 
 	{
 		GameInit();
 		g_string = game.getGraph();
@@ -74,54 +83,7 @@ public class SimpleGameClient
 		{
 			manualPlay();
 		}
-	}
-
-	public static void test1() 
-	{
-
-		String g = game.getGraph();
-		//GameServer game2 = new GameServer(game.getFruits(),game.);
-
-		DGraph gg = new DGraph();
-		gg.init(g);
-		String info = game.toString();
-		JSONObject line;
-		GameGUI window = null;
-		try
-		{
-			line = new JSONObject(info);
-			JSONObject ttt = line.getJSONObject("GameServer");
-			int rs = ttt.getInt("robots");
-			int moves = ttt.getInt("moves");
-			int grade = ttt.getInt("grade");
-			System.out.println(info);
-			System.out.println(g);
-			//GameServer game2 = new GameServer(game.getFruits(),moves,grade,rs,g,game);
-			window = new GameGUI(gg,game,scenario_num);
-
-			// the list of fruits should be considered in your solution
-			Iterator<String> f_iter = game.getFruits().iterator();
-			while(f_iter.hasNext()) {System.out.println(f_iter.next());}	
-			int src_node = 4;  // arbitrary node, you should start at one of the fruits
-			for(int a = 0;a<rs;a++) 
-			{
-				game.addRobot(src_node+a);
-			}
-		}
-		catch (JSONException e) {e.printStackTrace();}
-
-		game.startGame();
-
-		window.setVisible(true);
-
-		while(game.isRunning()) 
-		{
-			moveRobots(game, gg);
-			window.repaint();
-		}
-
-		String results = game.toString();
-		System.out.println("Game Over: "+results);
+		
 	}
 
 	/**
@@ -139,8 +101,7 @@ public class SimpleGameClient
 		
 		try
 		{
-			int id = Integer.parseInt(user_id);
-			//Game_Server.login(id);
+			id = Integer.parseInt(user_id);
 			
 		}catch(Exception e)
 		{
@@ -148,6 +109,8 @@ public class SimpleGameClient
 		}
 		
 			//choose scenario
+			Game_Server.login(id);
+			
 			typegame  = JOptionPane.showInputDialog(frame,"Enter manual or auto");
 			scenario_num = 0; 
 			
@@ -189,12 +152,17 @@ public class SimpleGameClient
 		GameGUI window = new GameGUI(server);
 		window.setVisible(true);
 		game.startGame();
-
-		int dt = 100;
+		
+		dt = 115;
+				
 		while( game.isRunning()) 
 		{
 			moveRobots(game, DG);
-
+			
+			if(game.timeToEnd()/1000 < 10)
+			{
+				dt = 67;
+			}
 			window.repaint();
 
 			try 
@@ -218,6 +186,7 @@ public class SimpleGameClient
 			chooser.setVisible(true);
 			String filename =chooser.getDirectory()+chooser.getFile();
 			KML.save_kml(filename);
+			game.sendKML(KML.toString());
 		}
 	}
 
@@ -232,9 +201,10 @@ public class SimpleGameClient
 		window.setVisible(true);
 		game.startGame();
 		JFrame frame = null;
-		int node;
-		int idr;
-		int dt = 100;
+		int node = -1;
+		int idr = -1;
+		dt = 100;
+		
 		while( game.isRunning()) 
 		{
 			String s_robot = JOptionPane.showInputDialog(frame,"Enter a robot id");
@@ -250,19 +220,11 @@ public class SimpleGameClient
 			moveRobotsM(idr, node, DG);
 
 			window.repaint();
-
-			//			try 
-			//			{
-			//				//Thread.sleep(dt);
-			//			} catch (InterruptedException e)
-			//			{
-			//				e.printStackTrace();
-			//			}
 		}
 	}
 
 	/**
-	 * 
+	 * manual mobe the robots in the game one node at a time
 	 * 
 	 * 
 	 * @param id represents the robot id
@@ -286,6 +248,8 @@ public class SimpleGameClient
 					int src = ttt.getInt("src");
 					int dest = ttt.getInt("dest");
 					String pos = ttt.getString("pos");
+					
+					
 					if(rid == id)
 					{
 						game.chooseNextEdge(rid, node);
@@ -392,7 +356,6 @@ public class SimpleGameClient
 				String robot_json = log.get(i);
 				try {
 					JSONObject line = new JSONObject(robot_json);
-					//System.out.println("str: " + robot_json);
 					JSONObject rob = line.getJSONObject("Robot");
 					int rid = rob.getInt("id");
 					int src = rob.getInt("src");
@@ -491,6 +454,14 @@ public class SimpleGameClient
 		next = pathQ.poll().getKey();
 		return next;
 	}
+
+	@Override
+	public void run() 
+	{
+		gameRunner();
+	}
+
+	
 
 //	/**
 //	 * Updating the kml according to the robots in the game
