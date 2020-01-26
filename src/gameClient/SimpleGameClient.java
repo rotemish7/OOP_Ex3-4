@@ -142,7 +142,7 @@ public class SimpleGameClient
 		try
 		{
 			int id = Integer.parseInt(user_id);
-			//Game_Server.login(id);
+			Game_Server.login(id);
 
 		}catch(Exception e)
 		{
@@ -474,7 +474,8 @@ public class SimpleGameClient
 
 		GA.init(g);
 		long t =game.timeToEnd();
-		if(t%100 == 0 && t/1000>20)
+		if(t%10 == 0 && t/1000>21)
+//		if(t%5!=0)
 		{
 			List<Fruit> fruit = creatFruits(game.getFruits());
 			int next=0, bestDest=0;
